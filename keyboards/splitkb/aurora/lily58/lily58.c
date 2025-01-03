@@ -311,3 +311,9 @@ bool encoder_update_kb(uint8_t index, bool clockwise) {
     return true;
 }
 #endif
+
+// Disable on-board LED
+void keyboard_pre_init_user(void) {
+    gpio_set_pin_output(24);
+    gpio_write_pin_high(24);
+}
