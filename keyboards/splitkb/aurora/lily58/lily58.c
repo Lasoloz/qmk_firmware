@@ -21,6 +21,7 @@ enum layers {
   _DEFAULT,
   _LOWER,
   _RAISE,
+  _NUMERIC,
   _ADJUST
 };
 
@@ -208,6 +209,10 @@ void render_layer_state(void) {
         0x20, 0x9a, 0x9b, 0x9c, 0x20,
         0x20, 0xba, 0xbb, 0xbc, 0x20,
         0x20, 0xda, 0xdb, 0xdc, 0x20, 0};
+    static const char PROGMEM numeric_layer[] = {
+        0x20, 0x80, 0x81, 0x82, 0x20,
+        0x20, 0xa0, 0xa1, 0xa2, 0x20,
+        0x20, 0xc0, 0xc1, 0xc2, 0x20, 0};
     static const char PROGMEM adjust_layer[] = {
         0x20, 0x9d, 0x9e, 0x9f, 0x20,
         0x20, 0xbd, 0xbe, 0xbf, 0x20,
@@ -222,6 +227,9 @@ void render_layer_state(void) {
             break;
         case _ADJUST:
             oled_write_P(adjust_layer, false);
+            break;
+        case _NUMERIC:
+            oled_write_P(numeric_layer, false);
             break;
         default:
             oled_write_P(default_layer, false);
@@ -317,3 +325,56 @@ void keyboard_pre_init_user(void) {
     gpio_set_pin_output(24);
     gpio_write_pin_high(24);
 }
+
+#if RGB_MATRIX_ENABLE
+bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
+    uint8_t layer = get_highest_layer(layer_state);
+    if (get_highest_layer(layer_state|default_layer_state) == _NUMERIC) {
+        uint8_t current_hue = rgb_matrix_get_hue();
+        uint8_t current_value = rgb_matrix_get_val();
+        uint8_t current_saturation = rgb_matrix_get_sat();
+        if (current_saturation < 128) {
+            current_saturation = 128;
+        }
+        hsv_t numbers_hsv = { (current_hue + 85) % 256, current_saturation, current_value };
+        hsv_t signs_hsv = { (numbers_hsv.h + 85) % 256, current_saturation, current_value };
+        rgb_t numbers_rgb = hsv_to_rgb(numbers_hsv);
+        rgb_t signs_rgb = hsv_to_rgb(signs_hsv);
+
+        for (uint8_t row = 0; row < MATRIX_ROWS; ++row) {
+            for (uint8_t col = 0; col < MATRIX_COLS; ++col) {
+                uint8_t index = g_led_config.matrix_co[row][col];
+
+                if (index >= led_min && index < led_max && index != NO_LED) {
+                    uint16_t keycode = keymap_key_to_keycode(layer, (keypos_t){col,row});
+                    switch (keycode) {
+                        case KC_P0:
+                        case KC_P1:
+                        case KC_P2:
+                        case KC_P3:
+                        case KC_P4:
+                        case KC_P5:
+                        case KC_P6:
+                        case KC_P7:
+                        case KC_P8:
+                        case KC_P9:
+                            rgb_matrix_set_color(index, numbers_rgb.r, numbers_rgb.g, numbers_rgb.b);
+                            break;
+                        case KC_NUM:
+                        case KC_PENT:
+                        case TG(3):
+                        case KC_PSLS:
+                        case KC_PAST:
+                        case KC_PMNS:
+                        case KC_PDOT:
+                        case KC_PPLS:
+                            rgb_matrix_set_color(index, signs_rgb.r, signs_rgb.g, signs_rgb.b);
+                            break;
+                    }
+                }
+            }
+        }
+    }
+    return false;
+}
+#endif
