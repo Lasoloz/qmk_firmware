@@ -22,6 +22,7 @@ enum layers {
   _LOWER,
   _RAISE,
   _NUMERIC,
+  _NAVIGATION,
   _ADJUST
 };
 
@@ -213,6 +214,10 @@ void render_layer_state(void) {
         0x20, 0x80, 0x81, 0x82, 0x20,
         0x20, 0xa0, 0xa1, 0xa2, 0x20,
         0x20, 0xc0, 0xc1, 0xc2, 0x20, 0};
+    static const char PROGMEM navigation_layer[] = {
+        0x20, 0x80, 0x81, 0x82, 0x20,
+        0x20, 0xa0, 0x83, 0xa2, 0x20,
+        0x20, 0xc0, 0xc1, 0xc2, 0x20, 0};
     static const char PROGMEM adjust_layer[] = {
         0x20, 0x9d, 0x9e, 0x9f, 0x20,
         0x20, 0xbd, 0xbe, 0xbf, 0x20,
@@ -230,6 +235,9 @@ void render_layer_state(void) {
             break;
         case _NUMERIC:
             oled_write_P(numeric_layer, false);
+            break;
+        case _NAVIGATION:
+            oled_write_P(navigation_layer, false);
             break;
         default:
             oled_write_P(default_layer, false);
@@ -358,7 +366,9 @@ bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
                         case KC_P7:
                         case KC_P8:
                         case KC_P9:
-                            rgb_matrix_set_color(index, numbers_rgb.r, numbers_rgb.g, numbers_rgb.b);
+                            if (host_keyboard_led_state().num_lock) {
+                                rgb_matrix_set_color(index, numbers_rgb.r, numbers_rgb.g, numbers_rgb.b);
+                            }
                             break;
                         case KC_NUM:
                         case KC_PENT:
