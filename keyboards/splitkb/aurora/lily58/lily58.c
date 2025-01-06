@@ -337,18 +337,22 @@ void keyboard_pre_init_user(void) {
 #if RGB_MATRIX_ENABLE
 bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
     uint8_t layer = get_highest_layer(layer_state);
-    if (get_highest_layer(layer_state|default_layer_state) == _NUMERIC) {
-        uint8_t current_hue = rgb_matrix_get_hue();
-        uint8_t current_value = rgb_matrix_get_val();
-        uint8_t current_saturation = rgb_matrix_get_sat();
-        if (current_saturation < 128) {
-            current_saturation = 128;
-        }
-        hsv_t numbers_hsv = { (current_hue + 85) % 256, current_saturation, current_value };
-        hsv_t signs_hsv = { (numbers_hsv.h + 85) % 256, current_saturation, current_value };
-        rgb_t numbers_rgb = hsv_to_rgb(numbers_hsv);
-        rgb_t signs_rgb = hsv_to_rgb(signs_hsv);
+    if (layer == _DEFAULT) {
+        return false;
+    }
 
+    uint8_t current_hue = rgb_matrix_get_hue();
+    uint8_t current_value = rgb_matrix_get_val();
+    uint8_t current_saturation = rgb_matrix_get_sat();
+    if (current_saturation < 128) {
+        current_saturation = 128;
+    }
+    hsv_t numbers_hsv = { (current_hue + 85) % 256, current_saturation, current_value };
+    hsv_t signs_hsv = { (numbers_hsv.h + 85) % 256, current_saturation, current_value };
+    rgb_t numbers_rgb = hsv_to_rgb(numbers_hsv);
+    rgb_t signs_rgb = hsv_to_rgb(signs_hsv);
+
+    if (layer == _NUMERIC) {
         for (uint8_t row = 0; row < MATRIX_ROWS; ++row) {
             for (uint8_t col = 0; col < MATRIX_COLS; ++col) {
                 uint8_t index = g_led_config.matrix_co[row][col];
