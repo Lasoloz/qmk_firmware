@@ -21,7 +21,6 @@ enum layers {
   _DEFAULT,
   _LOWER,
   _RAISE,
-  _NUMERIC,
   _NAVIGATION,
   _ADJUST
 };
@@ -210,18 +209,14 @@ void render_layer_state(void) {
         0x20, 0x9a, 0x9b, 0x9c, 0x20,
         0x20, 0xba, 0xbb, 0xbc, 0x20,
         0x20, 0xda, 0xdb, 0xdc, 0x20, 0};
-    static const char PROGMEM numeric_layer[] = {
+    static const char PROGMEM navigation_layer[] = {
+        0x20, 0x80, 0x83, 0x82, 0x20,
+        0x20, 0xa0, 0xa3, 0xa2, 0x20,
+        0x20, 0xc0, 0xc1, 0xc2, 0x20, 0};
+    static const char PROGMEM adjust_layer[] = {
         0x20, 0x80, 0x81, 0x82, 0x20,
         0x20, 0xa0, 0xa1, 0xa2, 0x20,
         0x20, 0xc0, 0xc1, 0xc2, 0x20, 0};
-    static const char PROGMEM navigation_layer[] = {
-        0x20, 0x80, 0x81, 0x82, 0x20,
-        0x20, 0xa0, 0x83, 0xa2, 0x20,
-        0x20, 0xc0, 0xc1, 0xc2, 0x20, 0};
-    static const char PROGMEM adjust_layer[] = {
-        0x20, 0x9d, 0x9e, 0x9f, 0x20,
-        0x20, 0xbd, 0xbe, 0xbf, 0x20,
-        0x20, 0xdd, 0xde, 0xdf, 0x20, 0};
 
     switch (get_highest_layer(layer_state | default_layer_state)) {
         case _LOWER:
@@ -232,9 +227,6 @@ void render_layer_state(void) {
             break;
         case _ADJUST:
             oled_write_P(adjust_layer, false);
-            break;
-        case _NUMERIC:
-            oled_write_P(numeric_layer, false);
             break;
         case _NAVIGATION:
             oled_write_P(navigation_layer, false);
@@ -336,7 +328,7 @@ void keyboard_pre_init_user(void) {
 
 #if RGB_MATRIX_ENABLE
 bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
-    uint8_t layer = get_highest_layer(layer_state);
+    uint8_t layer = get_highest_layer(layer_state | default_layer_state);
     if (layer == _DEFAULT) {
         return false;
     }
@@ -352,7 +344,7 @@ bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
     rgb_t numbers_rgb = hsv_to_rgb(numbers_hsv);
     rgb_t signs_rgb = hsv_to_rgb(signs_hsv);
 
-    if (layer == _NUMERIC) {
+    if (layer == _RAISE) {
         for (uint8_t row = 0; row < MATRIX_ROWS; ++row) {
             for (uint8_t col = 0; col < MATRIX_COLS; ++col) {
                 uint8_t index = g_led_config.matrix_co[row][col];

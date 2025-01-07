@@ -24,3 +24,7 @@
 #ifdef RGB_MATRIX_ENABLE
 #   define SPLIT_LAYER_STATE_ENABLE
 #endif
+
+#define TAPPING_TOGGLE 1
+#define PERMISSIVE_HOLD
+#define TAPPING_TERM 100
