@@ -16,6 +16,8 @@
 
 #include "quantum.h"
 
+#define SUPER_RAISE_IDLE_TIMER 200;
+
 // The first four layers gets a name for readability, which is then used in the OLED below.
 enum layers {
   _DEFAULT,
@@ -24,6 +26,43 @@ enum layers {
   _NAVIGATION,
   _ADJUST
 };
+
+enum keycodes {
+    KC_SUPER_RAISE = QK_KB_0
+};
+
+static bool raise_locked = false;
+
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    static bool tapped = false;
+
+    if (keycode == KC_SUPER_RAISE) {
+        static uint16_t timer = 0;
+        
+        if (record->event.pressed) {
+            layer_on(_RAISE);
+            tapped = true;
+            timer = record->event.time + SUPER_RAISE_IDLE_TIMER;
+        } else {
+            if (!tapped || timer_expired(record->event.time, timer)) {
+                layer_off(_RAISE);
+                raise_locked = false;
+            } else {
+                raise_locked = true;
+            }
+        }
+        return false;
+    } else {
+        switch (keycode) {
+            case TG(2):
+                raise_locked = false;
+            default:
+                tapped = false;
+                break;
+        }
+        return true;
+    }
+}
 
 #ifdef OLED_ENABLE
 // NOTE: Most of the OLED code was originally written by Soundmonster for the Corne,
@@ -205,10 +244,10 @@ void render_layer_state(void) {
         0x20, 0x97, 0x98, 0x99, 0x20,
         0x20, 0xb7, 0xb8, 0xb9, 0x20,
         0x20, 0xd7, 0xd8, 0xd9, 0x20, 0};
-    // static const char PROGMEM locked_raise_layer[] = {
-    //     0x20, 0x9d, 0x9e, 0x9f, 0x20,
-    //     0x20, 0xbd, 0xbe, 0xbf, 0x20,
-    //     0x20, 0xdd, 0xde, 0xdf, 0x20, 0};
+    static const char PROGMEM locked_raise_layer[] = {
+        0x20, 0x9d, 0x9e, 0x9f, 0x20,
+        0x20, 0xbd, 0xbe, 0xbf, 0x20,
+        0x20, 0xdd, 0xde, 0xdf, 0x20, 0};
     static const char PROGMEM lower_layer[] = {
         0x20, 0x9a, 0x9b, 0x9c, 0x20,
         0x20, 0xba, 0xbb, 0xbc, 0x20,
@@ -227,7 +266,11 @@ void render_layer_state(void) {
             oled_write_P(lower_layer, false);
             break;
         case _RAISE:
-            oled_write_P(raise_layer, false);
+            if (raise_locked) {
+                oled_write_P(locked_raise_layer, false);
+            } else {
+                oled_write_P(raise_layer, false);
+            }
             break;
         case _ADJUST:
             oled_write_P(adjust_layer, false);
@@ -348,7 +391,7 @@ bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
     rgb_t numbers_rgb = hsv_to_rgb(numbers_hsv);
     rgb_t signs_rgb = hsv_to_rgb(signs_hsv);
 
-    if (layer == _RAISE) {
+    if (layer == _RAISE && raise_locked) {
         for (uint8_t row = 0; row < MATRIX_ROWS; ++row) {
             for (uint8_t col = 0; col < MATRIX_COLS; ++col) {
                 uint8_t index = g_led_config.matrix_co[row][col];

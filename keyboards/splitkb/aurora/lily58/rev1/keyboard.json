@@ -10,6 +10,13 @@
         "oled": true,
         "rgb_matrix": true
     },
+    "keycodes": [
+        {
+            "key": "KC_SUPER_RAISE",
+            "label": "KC_SUPER_RAISE",
+            "aliases": ["KC_SR"]
+        }
+    ],
     "layouts": {
         "LAYOUT": {
             "layout": [
