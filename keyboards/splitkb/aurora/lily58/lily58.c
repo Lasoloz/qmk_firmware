@@ -15,8 +15,9 @@
  */
 
 #include "quantum.h"
+#include "transactions.h"
 
-#define SUPER_RAISE_IDLE_TIMER 200;
+#define SUPER_RAISE_IDLE_TIMER 200
 
 // The first four layers gets a name for readability, which is then used in the OLED below.
 enum layers {
@@ -31,35 +32,62 @@ enum keycodes {
     KC_SUPER_RAISE = QK_KB_0
 };
 
+typedef struct _master_to_slave_t {
+    bool raise_locked;
+} layer_lock_state_t;
+
 static bool raise_locked = false;
 
-bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    static bool tapped = false;
+void user_sync_layer_lock_slave_handler(uint8_t in_buflen, const void* in_data, uint8_t out_buflen, void* out_data) {
+    const layer_lock_state_t *m2s = (const layer_lock_state_t*)in_data;
+    raise_locked = m2s->raise_locked;
+}
 
-    if (keycode == KC_SUPER_RAISE) {
-        static uint16_t timer = 0;
-        
-        if (record->event.pressed) {
-            layer_on(_RAISE);
-            tapped = true;
-            timer = record->event.time + SUPER_RAISE_IDLE_TIMER;
-        } else {
-            if (!tapped || timer_expired(record->event.time, timer)) {
-                layer_off(_RAISE);
-                raise_locked = false;
+void keyboard_post_init_kb(void) {
+    transaction_register_rpc(USER_SYNC_LAYER_LOCK, user_sync_layer_lock_slave_handler);
+}
+
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    if (is_keyboard_master()) {
+        static layer_lock_state_t m2s = {false};
+        static bool tapped = false;
+
+        if (keycode == KC_SUPER_RAISE) {
+            static uint16_t timer = 0;
+            
+            if (record->event.pressed) {
+                layer_on(_RAISE);
+                tapped = true;
+                timer = record->event.time + SUPER_RAISE_IDLE_TIMER;
             } else {
-                raise_locked = true;
+                if (!tapped || timer_expired(record->event.time, timer)) {
+                    layer_off(_RAISE);
+                    raise_locked = false;
+                    if (m2s.raise_locked) {
+                        m2s.raise_locked = false;
+                        transaction_rpc_send(USER_SYNC_LAYER_LOCK, sizeof(m2s), &m2s);
+                    }
+                } else {
+                    raise_locked = true;
+                    if (!m2s.raise_locked) {
+                        m2s.raise_locked = true;
+                        transaction_rpc_send(USER_SYNC_LAYER_LOCK, sizeof(m2s), &m2s);
+                    }
+                }
             }
-        }
-        return false;
-    } else {
-        switch (keycode) {
-            case TG(2):
+            return false;
+        } else {
+            if (keycode == TG(2)) {
                 raise_locked = false;
-            default:
-                tapped = false;
-                break;
+                if (m2s.raise_locked) {
+                    m2s.raise_locked = false;
+                    transaction_rpc_send(USER_SYNC_LAYER_LOCK, sizeof(m2s), &m2s);
+                }
+            }
+            tapped = false;
+            return true;
         }
+    } else {
         return true;
     }
 }
