@@ -403,8 +403,7 @@ void keyboard_pre_init_user(void) {
 
 #if RGB_MATRIX_ENABLE
 bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
-    uint8_t layer = get_highest_layer(layer_state | default_layer_state);
-    if (layer == _DEFAULT) {
+    if (!raise_locked) {
         return false;
     }
 
@@ -414,18 +413,22 @@ bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
     if (current_saturation < 128) {
         current_saturation = 128;
     }
-    hsv_t numbers_hsv = { (current_hue + 85) % 256, current_saturation, current_value };
-    hsv_t signs_hsv = { (numbers_hsv.h + 85) % 256, current_saturation, current_value };
-    rgb_t numbers_rgb = hsv_to_rgb(numbers_hsv);
-    rgb_t signs_rgb = hsv_to_rgb(signs_hsv);
+    hsv_t alt_1_hsv = { (current_hue + 64) % 256, current_saturation, current_value };
+    hsv_t alt_2_hsv = { (alt_1_hsv.h + 64) % 256, current_saturation, current_value };
+    hsv_t alt_3_hsv = { (alt_2_hsv.h + 64) % 256, current_saturation, current_value };
+    hsv_t irrelevant_hsv = { current_hue, 16, current_value <= 32 ? 0 : 16 };
+    rgb_t alt_1_rgb = hsv_to_rgb(alt_1_hsv);
+    rgb_t alt_2_rgb = hsv_to_rgb(alt_2_hsv);
+    rgb_t alt_3_rgb = hsv_to_rgb(alt_3_hsv);
+    rgb_t irrelevant_rgb = hsv_to_rgb(irrelevant_hsv);
 
-    if (layer == _RAISE && raise_locked) {
+    if (raise_locked) {
         for (uint8_t row = 0; row < MATRIX_ROWS; ++row) {
             for (uint8_t col = 0; col < MATRIX_COLS; ++col) {
                 uint8_t index = g_led_config.matrix_co[row][col];
 
                 if (index >= led_min && index < led_max && index != NO_LED) {
-                    uint16_t keycode = keymap_key_to_keycode(layer, (keypos_t){col,row});
+                    uint16_t keycode = keymap_key_to_keycode(_RAISE, (keypos_t){col,row});
                     switch (keycode) {
                         case KC_P0:
                         case KC_P1:
@@ -438,18 +441,48 @@ bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
                         case KC_P8:
                         case KC_P9:
                             if (host_keyboard_led_state().num_lock) {
-                                rgb_matrix_set_color(index, numbers_rgb.r, numbers_rgb.g, numbers_rgb.b);
+                                rgb_matrix_set_color(index, alt_1_rgb.r, alt_1_rgb.g, alt_1_rgb.b);
                             }
                             break;
                         case KC_NUM:
+                            if (!host_keyboard_led_state().num_lock) {
+                                rgb_matrix_set_color(index, alt_3_rgb.r, alt_3_rgb.g, alt_3_rgb.b);
+                                break;
+                            }
                         case KC_PENT:
-                        case TG(3):
                         case KC_PSLS:
                         case KC_PAST:
                         case KC_PMNS:
                         case KC_PDOT:
                         case KC_PPLS:
-                            rgb_matrix_set_color(index, signs_rgb.r, signs_rgb.g, signs_rgb.b);
+                        case KC_F1:
+                        case KC_F2:
+                        case KC_F3:
+                        case KC_F4:
+                        case KC_F5:
+                        case KC_F6:
+                        case KC_F7:
+                        case KC_F8:
+                        case KC_F9:
+                        case KC_F10:
+                        case KC_F11:
+                        case KC_F12:
+                            rgb_matrix_set_color(index, alt_2_rgb.r, alt_2_rgb.g, alt_2_rgb.b);
+                            break;
+                        case KC_MSTP:
+                        case KC_MPLY:
+                        case KC_FIND:
+                        case KC_VOLU:
+                        case KC_CUT:
+                        case KC_COPY:
+                        case KC_PSTE:
+                        case KC_VOLD:
+                        case KC_MPRV:
+                        case KC_MNXT:
+                            rgb_matrix_set_color(index, alt_1_rgb.r, alt_1_rgb.g, alt_1_rgb.b);
+                            break;
+                        case KC_NO:
+                            rgb_matrix_set_color(index, irrelevant_rgb.r, irrelevant_rgb.g, irrelevant_rgb.b);
                             break;
                     }
                 }
