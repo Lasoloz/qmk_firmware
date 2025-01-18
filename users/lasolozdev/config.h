@@ -9,6 +9,7 @@
 // Enable split led state for Num/Caps/Scroll lock checking on slave side
 #ifdef RGB_MATRIX_ENABLE
 #   define SPLIT_LED_STATE_ENABLE
+#   define SPLIT_LAYER_STATE_ENABLE
 #endif
 
 // Define user transaction IDs, that might or might not be used
