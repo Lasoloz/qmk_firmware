@@ -1,0 +1,4 @@
+#pragma once
+
+#define TAP_LOCKING_LAYERS_ENABLE
+#define RGB_MATRIX_ADDITIONAL_LAYERS
