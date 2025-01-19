@@ -7,6 +7,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     return true;
     #else
     static const uint16_t QK_TAP_LOCKING_END = QK_KB_0 + TAP_LOCKING_LAYER_COUNT;
+    #ifdef TAP_LOCKING_UNLOCK_ONLY_ON_SAME_TOGGLE
+    static const uint16_t TG_EXIT_END = TG(TAP_LOCKING_STARTING_LAYER) + TAP_LOCKING_LAYER_COUNT;
+    #endif
     static bool tapped = false;
 
     if (!is_keyboard_master()) {
@@ -21,6 +24,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     tapped = false;
 
+    #ifdef TAP_LOCKING_UNLOCK_ONLY_ON_SAME_TOGGLE
+    if (keycode >= TG(TAP_LOCKING_STARTING_LAYER) && keycode < TG_EXIT_END) {
+        update_locked_state(false, 0);
+    }
+    #else
     if (keycode >= TG(0) && keycode < TG(16) && !record->event.pressed) {
         layer_lock_state_t *prev_lock_state = update_locked_state(false, 0);
 
@@ -29,6 +37,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             return false;
         }
     }
+    #endif
 
     return true;
     #endif
