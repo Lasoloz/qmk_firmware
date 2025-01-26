@@ -32,6 +32,7 @@ int keycode_to_led_category(uint8_t layer, uint16_t keycode) {
                 return LED_ALT_2;
         }
     } else if (layer == _RAISE) {
+        led_t led_usb_state = host_keyboard_led_state();
         switch (keycode) {
             case KC_P0:
             case KC_P1:
@@ -43,6 +44,9 @@ int keycode_to_led_category(uint8_t layer, uint16_t keycode) {
             case KC_P7:
             case KC_P8:
             case KC_P9:
+                if (!led_usb_state.num_lock) {
+                    return LED_NORMAL;
+                }
             case KC_MSTP:
             case KC_MPLY:
             case KC_FIND:
