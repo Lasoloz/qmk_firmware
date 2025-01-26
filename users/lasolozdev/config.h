@@ -7,6 +7,7 @@
 #endif
 
 // Enable split led state for Num/Caps/Scroll lock checking on slave side
+// Enable layer state checking on the slave side
 #ifdef RGB_MATRIX_ENABLE
 #   define SPLIT_LED_STATE_ENABLE
 #   define SPLIT_LAYER_STATE_ENABLE
