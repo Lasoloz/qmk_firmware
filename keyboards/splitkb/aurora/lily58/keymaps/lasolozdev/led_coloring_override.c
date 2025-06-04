@@ -78,11 +78,19 @@ int keycode_to_led_category(uint8_t layer, uint16_t keycode) {
             return LED_ALT_2;
         }
         return LED_ALT_1;
+    } else if (layer == _GAMING_1) {
+        switch (keycode) {
+            case KC_UP:
+            case KC_LEFT:
+            case KC_DOWN:
+            case KC_RIGHT:
+                return LED_ALT_1;
+        }
     }
 
     return LED_NORMAL;
 }
 
 bool layer_led_enabled_as_highest(uint8_t layer) {
-    return layer == _ADJUST;
+    return layer == _ADJUST || layer == _GAMING_1;
 }
