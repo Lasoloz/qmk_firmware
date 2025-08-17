@@ -75,14 +75,28 @@ int keycode_to_led_category(uint8_t layer, uint16_t keycode) {
         }
     } else if (layer == _ADJUST) {
         if (keycode == KC_SLEP || keycode == KC_PWR) {
+            return LED_ALT_1;
+        }
+        if (keycode >= TO(0) && keycode <= TO(15)) {
             return LED_ALT_2;
         }
-        return LED_ALT_1;
+        return LED_NORMAL;
+    } else if (layer == _GAMING_1) {
+        switch (keycode) {
+            case KC_UP:
+            case KC_LEFT:
+            case KC_DOWN:
+            case KC_RIGHT:
+            case KC_MPLY:
+            case KC_VOLU:
+            case KC_VOLD:
+                return LED_ALT_1;
+        }
     }
 
     return LED_NORMAL;
 }
 
 bool layer_led_enabled_as_highest(uint8_t layer) {
-    return layer == _ADJUST;
+    return layer == _ADJUST || layer == _GAMING_1;
 }
