@@ -6,6 +6,8 @@
 #ifdef TAP_LOCKING_LAYERS_ENABLE
 #define NO_LAYER_COLORING 255
 
+void set_matrix_color_for_handler(uint8_t index, uint8_t hue, uint8_t saturation, uint8_t value, uint16_t keycode);
+
 bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
     layer_lock_state_t *layer_lock_state = get_global_layer_lock_state();
 
@@ -27,16 +29,18 @@ bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
     }
 
     uint8_t hue = rgb_matrix_get_hue();
-    uint8_t value = rgb_matrix_get_val();
     uint8_t saturation = rgb_matrix_get_sat();
-    if (saturation < 128) {
-        // Increase saturation in so there is a difference between normal white keys and important keys
+    uint8_t value = rgb_matrix_get_val();
+
+    uint8_t saturation_adjusted = saturation;
+    if (saturation_adjusted < 128) {
+        // Increase saturation so there is a difference between normal white keys and important keys
         // (in case saturation is down)
-        saturation = 128;
+        saturation_adjusted = 128;
     }
 
-    hsv_t alt_1_hsv = { (hue + 85) % 256, saturation, value };
-    hsv_t alt_2_hsv = { (alt_1_hsv.h + 85) % 256, saturation, value };
+    hsv_t alt_1_hsv = { (hue + 85) % 256, saturation_adjusted, value };
+    hsv_t alt_2_hsv = { (alt_1_hsv.h + 85) % 256, saturation_adjusted, value };
     hsv_t irrelevant_hsv = { hue, 16, value <= 48 ? 0 : 16 };
     rgb_t alt_1_rgb = hsv_to_rgb(alt_1_hsv);
     rgb_t alt_2_rgb = hsv_to_rgb(alt_2_hsv);
@@ -60,6 +64,9 @@ bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
                     case LED_IRRELEVANT:
                         rgb_matrix_set_color(index, irrelevant_rgb.r, irrelevant_rgb.g, irrelevant_rgb.b);
                         break;
+                    case LED_HANDLER_FALLTHROUGH:
+                        set_matrix_color_for_handler(index, hue, saturation, value, keycode);
+                        break;
                     default:
                         break;
                 }
@@ -69,5 +76,35 @@ bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
 
     return false;
 }
+
+void set_matrix_color_for_handler(uint8_t index, uint8_t hue, uint8_t saturation, uint8_t value, uint16_t keycode) {
+    hsv_t target_hsv = { hue, saturation, value };
+    switch (keycode) {
+        case RM_HUEU:
+            target_hsv.h = hue + 8;
+            break;
+        case RM_HUED:
+            target_hsv.h = hue - 8;
+            break;
+        case RM_SATU:
+            target_hsv.s = saturation > 223 ? 256 : (saturation + 32);
+            break;
+        case RM_SATD:
+            target_hsv.s = saturation < 32 ? 0 : (saturation - 32);
+            break;
+        case RM_VALU:
+            target_hsv.v = value > 223 ? 256 : (value + 32);
+            break;
+        case RM_VALD:
+            target_hsv.v = value < 32 ? 0 : (value - 32);
+            break;
+        default:
+            return;
+    }
+
+    rgb_t target_rgb = hsv_to_rgb(target_hsv);
+    rgb_matrix_set_color(index, target_rgb.r, target_rgb.g, target_rgb.b);
+}
+
 #endif
 #endif

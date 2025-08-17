@@ -80,6 +80,9 @@ int keycode_to_led_category(uint8_t layer, uint16_t keycode) {
         if (keycode >= TO(0) && keycode <= TO(15)) {
             return LED_ALT_2;
         }
+        if (keycode >= RM_HUEU && keycode <= RM_VALD) {
+            return LED_HANDLER_FALLTHROUGH;
+        }
         return LED_NORMAL;
     } else if (layer == _GAMING_1) {
         switch (keycode) {
