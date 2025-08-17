@@ -1,5 +1,7 @@
 #pragma once
 
+#include "quantum.h"
+
 enum led_category_t {
     LED_NORMAL,
     LED_ALT_1,
